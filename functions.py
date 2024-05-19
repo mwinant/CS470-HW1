@@ -6,6 +6,7 @@ Date: 05/15/2024
 import heapq
 import math
 from collections import deque, namedtuple
+from typing import List, Tuple, Set
 
 # flake8: noqa
 SearchResult = namedtuple('SearchResult', ['path', 'explored', 'open_list'])
@@ -76,7 +77,7 @@ def display_map(result, original_map):
         print(' '.join(row))
 
 
-def bfs(start, goal, barriers, width, height):
+def bfs(start: Tuple[int, int], goal: Tuple[int, int], barriers: Set[Tuple[int, int]], width: int, height: int) -> SearchResult:
     """Breadth First Search Algorithm."""
     queue = deque([start])
     parent = {start: None}
@@ -93,7 +94,7 @@ def bfs(start, goal, barriers, width, height):
             break
 
         x, y = current
-        neighbors = [(x-1, y), (x+1, y), (x, y-1), (x, y+1)]
+        neighbors = [(x, y-1), (x, y+1), (x-1, y), (x+1, y)]  # Only up, down, left, right
 
         for neighbor in neighbors:
             if neighbor[0] < 0 or neighbor[0] >= width or neighbor[1] < 0 or neighbor[1] >= height:
@@ -121,15 +122,20 @@ def lowest_cost_search(start, goal, barriers, width, height):
     queue = [(0, start)]
     parent = {start: None}
     cost_so_far = {start: 0}
+    closed_list = set()
 
     while queue:
         current_cost, current = heapq.heappop(queue)
+
+        if current in closed_list:
+            continue
+        closed_list.add(current)
 
         if current == goal:
             break
 
         x, y = current
-        neighbors = [(x-1, y), (x+1, y), (x, y-1), (x, y+1)]
+        neighbors = [(x, y-1), (x, y+1), (x-1, y), (x+1, y)]  # Only up, down, left, right
 
         for neighbor in neighbors:
             if neighbor[0] < 0 or neighbor[0] >= width or neighbor[1] < 0 or neighbor[1] >= height:
@@ -160,12 +166,20 @@ def manhattan_distance(start, goal):
 
 
 def greedy_best_first_search(start, goal, barriers, width, height):
-    """Greedy Best First Search Algorithm."""
+    """Greedy Best First Search Algorithm without diagonal movement."""
     queue = [(manhattan_distance(start, goal), start)]
     parent = {start: None}
+    closed_list = set()
+    open_list = set([start])
 
     while queue:
         _, current = heapq.heappop(queue)
+
+        if current in closed_list:
+            continue
+
+        closed_list.add(current)
+        open_list.remove(current)
 
         if current == goal:
             break
@@ -182,6 +196,8 @@ def greedy_best_first_search(start, goal, barriers, width, height):
                 priority = manhattan_distance(neighbor, goal)
                 heapq.heappush(queue, (priority, neighbor))
                 parent[neighbor] = current
+                if neighbor not in closed_list:
+                    open_list.add(neighbor)
 
     # Reconstruct the path
     path = []
@@ -191,7 +207,7 @@ def greedy_best_first_search(start, goal, barriers, width, height):
         current = parent[current]
     path.reverse()
 
-    return SearchResult(path=path, explored=set(parent.keys()), open_list=set())
+    return SearchResult(path=path, explored=closed_list, open_list=open_list)
 
 
 def euclidean_distance(start, goal):
@@ -199,8 +215,8 @@ def euclidean_distance(start, goal):
     return math.sqrt((start[0] - goal[0])**2 + (start[1] - goal[1])**2)
 
 
-def a_star_search(start, goal, barriers, width, height, heuristic):
-    """A* Search Algorithm."""
+def a_star_search(start, goal, barriers, width, height, heuristic='manhattan'):
+    """A* Search Algorithm without diagonal movement."""
     if heuristic == 'manhattan':
         h = manhattan_distance
     elif heuristic == 'euclidean':
@@ -211,9 +227,17 @@ def a_star_search(start, goal, barriers, width, height, heuristic):
     queue = [(0 + h(start, goal), 0, start)]  # (f, g, position)
     parent = {start: None}
     cost_so_far = {start: 0}
+    closed_list = set()
+    open_list = set([start])
 
     while queue:
         _, g, current = heapq.heappop(queue)
+
+        if current in closed_list:
+            continue
+
+        closed_list.add(current)
+        open_list.remove(current)
 
         if current == goal:
             break
@@ -232,6 +256,8 @@ def a_star_search(start, goal, barriers, width, height, heuristic):
                 priority = new_cost + h(neighbor, goal)
                 heapq.heappush(queue, (priority, new_cost, neighbor))
                 parent[neighbor] = current
+                if neighbor not in closed_list:
+                    open_list.add(neighbor)
 
     # Reconstruct the path
     path = []
@@ -241,4 +267,4 @@ def a_star_search(start, goal, barriers, width, height, heuristic):
         current = parent[current]
     path.reverse()
 
-    return SearchResult(path=path, explored=set(cost_so_far.keys()), open_list=set())
+    return SearchResult(path=path, explored=set(cost_so_far.keys()), open_list=open_list)

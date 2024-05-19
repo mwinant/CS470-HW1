@@ -10,7 +10,7 @@ Date: 05/15/2024
 
 from functions import (
     read_map_from_file, find_start_position, find_end_position, find_barriers,
-    display_map, bfs, lowest_cost_search, a_star_search
+    display_map, bfs, lowest_cost_search, greedy_best_first_search, a_star_search
 )
 map_file = 'map.txt'
 maze = read_map_from_file(map_file)
@@ -30,6 +30,12 @@ print('\n\n\n')
 print("Lowest Cost First Map: \n")
 lcs_result = lowest_cost_search(start, goal, barriers, width, height)
 display_map(lcs_result, maze)
+
+print('\n\n\n')
+print("Greedy Best First Map: \n")
+# Greedy Best First with Manhattan Heuristic
+result_greedy = greedy_best_first_search(start, goal, barriers, width, height)
+display_map(result_greedy, maze)
 
 print('\n\n\n')
 print("A* with Manhattan distance: \n")
